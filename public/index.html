@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JobCraft — AI Job Application Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f0f11;--bg2:#16161a;--bg3:#1e1e24;--bg4:#26262f;
+      --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+      --text:#f0eff4;--text2:#9a99a8;--text3:#5c5b6e;
+      --accent:#7c6af7;--accent2:#9d8fff;--accent-bg:rgba(124,106,247,0.12);--accent-border:rgba(124,106,247,0.3);
+      --green:#3ecf8e;--green-bg:rgba(62,207,142,0.1);
+      --red:#f87171;--red-bg:rgba(248,113,113,0.1);
+      --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);
+      --radius:12px;--radius-sm:8px;
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0}
+    .main{margin-left:220px;padding:36px 44px;max-width:calc(100vw - 220px)}
+    .logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+    .logo-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#a78bfa);display:flex;align-items:center;justify-content:center;font-size:15px}
+    .logo-text{font-family:'DM Serif Display',serif;font-size:17px}
+    .nav-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:0 0 6px 8px}
+    .nav-steps{list-style:none;margin-bottom:28px}
+    .nav-step{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;color:var(--text2);font-size:13px;margin-bottom:2px}
+    .nav-step:hover{background:var(--bg3);color:var(--text)}
+    .nav-step.active{background:var(--accent-bg);color:var(--accent2);font-weight:500}
+    .nav-step.done{color:var(--green)}
+    .nav-step.done .step-num{background:var(--green-bg);color:var(--green);border-color:transparent}
+    .nav-step.active .step-num{background:var(--accent-bg);color:var(--accent2);border-color:var(--accent-border)}
+    .step-num{width:20px;height:20px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:var(--text3)}
+    .status-pill{margin-top:auto;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3);font-size:12px}
+    .status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;background:var(--text3);transition:background .3s}
+    .status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+    .status-dot.err{background:var(--red)}
+    .page-header{margin-bottom:28px}
+    .page-title{font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;margin-bottom:4px}
+    .page-sub{color:var(--text2);font-size:13px}
+    .section{display:none}.section.active{display:block;animation:fadeUp .25s ease}
+    .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:18px;transition:border-color .2s}
+    .card:hover{border-color:var(--border2)}
+    .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .card-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+    .field label{display:block;font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:500;letter-spacing:.03em}
+    input[type=text],input[type=number],input[type=password],textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;outline:none;transition:border-color .15s,box-shadow .15s}
+    input:focus,textarea:focus{border-color:var(--accent-border);box-shadow:0 0 0 3px rgba(124,106,247,.1)}
+    .field-row{display:grid;gap:12px;margin-bottom:14px}
+    .cols-2{grid-template-columns:1fr 1fr}
+    .cols-3{grid-template-columns:1fr 1fr 120px}
+    .btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    button{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,106,247,.3)}
+    .btn-primary:active{transform:translateY(0)}
+    .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+    .btn-ghost:hover{background:var(--bg4);color:var(--text)}
+    .btn-ghost:disabled{opacity:.4;cursor:not-allowed}
+    .btn-cv{background:rgba(124,106,247,.12);color:var(--accent2);border:1px solid var(--accent-border)}
+    .btn-cv:hover{background:rgba(124,106,247,.22)}
+    .btn-cv:disabled{opacity:.4;cursor:not-allowed}
+    .btn-cover{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+    .btn-cover:hover{background:rgba(251,191,36,.2)}
+    .btn-cover:disabled{opacity:.4;cursor:not-allowed}
+    .badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+    .badge-blue{background:rgba(96,165,250,.12);color:#93c5fd;border:1px solid rgba(96,165,250,.2)}
+    .badge-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2)}
+    .badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+    .badge-purple{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
+    .msg{font-size:12px;margin-top:10px;padding:8px 12px;border-radius:var(--radius-sm)}
+    .msg-err{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+    .msg-info{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
+    .msg-ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2)}
+    .spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+    .spinner-sm{width:10px;height:10px}
+    .data-table{width:100%;border-collapse:collapse;font-size:12px}
+    .data-table th{text-align:left;padding:7px 10px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+    .data-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+    .data-table tr:last-child td{border-bottom:none}
+    .data-table tr:hover td{background:var(--bg3)}
+    .td-clip{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+    a{color:var(--accent2);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .hidden{display:none!important}
+    code{background:var(--bg4);padding:2px 5px;border-radius:4px;font-size:11px;font-family:monospace}
+    .tbl-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border)}
+    .tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:900px}
+    .tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+    .tbl th:hover{color:var(--text2)}
+    .tbl th.sort-asc::after{content:" ↑"}
+    .tbl th.sort-desc::after{content:" ↓"}
+    .tbl td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle;white-space:nowrap}
+    .tbl tr:last-child td{border-bottom:none}
+    .tbl tr:hover td{background:var(--bg3)}
+    .tbl td.clip{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+    .filter-bar input,.filter-bar select{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 10px;outline:none;transition:border-color .15s}
+    .filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent-border)}
+    .filter-bar select{cursor:pointer}
+    .flash-green{animation:flashG .8s ease}
+    @keyframes flashG{0%,100%{background:transparent}50%{background:rgba(62,207,142,.15)}}
+    .ms-wrap{position:relative;display:inline-block}
+    .ms-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:12px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif}
+    .ms-btn:hover{border-color:var(--accent-border)}
+    .ms-btn.active{border-color:var(--accent-border);color:var(--accent2)}
+    .ms-drop{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:100;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:6px 4px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+    .ms-drop.open{display:block}
+    .ms-drop label{display:flex;align-items:center;gap:7px;padding:5px 10px;font-size:12px;cursor:pointer;border-radius:4px;white-space:nowrap}
+    .ms-drop label:hover{background:var(--bg3)}
+    .ms-drop input[type=checkbox]{accent-color:var(--accent2);cursor:pointer}
+    .jd-cell{cursor:pointer;max-width:36px;text-align:center}
+    .jd-cell:hover{color:var(--accent2)}
+    #jd-modal-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);align-items:center;justify-content:center}
+    #jd-modal-overlay.open{display:flex}
+    #jd-modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);padding:20px 24px;max-width:600px;width:90%;max-height:75vh;display:flex;flex-direction:column;gap:12px}
+    #jd-modal-header{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:500}
+    #jd-modal-close{cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:2px 6px;border-radius:4px}
+    #jd-modal-close:hover{color:var(--text);background:var(--bg3)}
+    #jd-modal-body{font-size:12px;line-height:1.8;color:var(--text2);white-space:pre-wrap;word-break:break-word;overflow-y:auto;flex:1}
+  </style>
+</head>
+<body>
+<div style="display:flex">
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">✦</div>
+    <span class="logo-text">JobCraft</span>
+  </div>
+  <p class="nav-label">Workflow</p>
+  <ul class="nav-steps">
+    <li class="nav-step active" data-step="scrape" onclick="goTo('scrape')"><span class="step-num" id="snum-scrape">1</span>Scrape & Export</li>
+    <li class="nav-step" data-step="ssot" onclick="goTo('ssot')"><span class="step-num" id="snum-ssot">2</span>Unique Jobs</li>
+    <li class="nav-step" data-step="database" onclick="goTo('database')"><span class="step-num" id="snum-database">3</span>SSOT Database</li>
+    <li class="nav-step" data-step="apply" onclick="goTo('apply')"><span class="step-num" id="snum-apply">✦</span>Apply to Job</li>
+  </ul>
+  <p class="nav-label">Settings</p>
+  <ul class="nav-steps">
+    <li class="nav-step" data-step="settings" onclick="goTo('settings')"><span class="step-num">⚙</span>API Keys</li>
+  </ul>
+  <div class="status-pill">
+    <div style="display:flex;align-items:center;margin-bottom:6px">
+      <span class="status-dot" id="proxy-dot"></span>
+      <span style="color:var(--text2);font-size:11px" id="proxy-label">Checking...</span>
+    </div>
+    <button class="btn-ghost" style="width:100%;font-size:11px;padding:5px" onclick="checkProxy()">Reconnect</button>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- ══ SCRAPE ══════════════════════════════ -->
+<section class="section active" id="section-scrape">
+  <div class="page-header">
+    <h1 class="page-title">Scrape Jobs</h1>
+    <p class="page-sub">Search LinkedIn via Apify, load demo jobs, or reuse an existing run.</p>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Search Parameters</span>
+      <span id="scrape-badge" class="hidden badge badge-green"></span>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>LinkedIn Jobs Search URL <span style="color:var(--red)">*</span></label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="q-url" placeholder="https://www.linkedin.com/jobs/search/?keywords=...&location=..." style="flex:1">
+        <button class="btn-ghost" style="font-size:12px;flex-shrink:0" onclick="toggleUrlBuilder()">Build URL</button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:4px">Paste any LinkedIn Jobs search URL — from Apify or your browser in incognito.</p>
+    </div>
+    <div id="url-builder" class="hidden" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px">
+      <div class="field-row cols-2" style="margin-bottom:10px">
+        <div class="field"><label>Keywords</label><input type="text" id="b-kw" placeholder="e.g. QA Engineer"></div>
+        <div class="field"><label>Location</label><input type="text" id="b-loc" placeholder="e.g. Berlin, Germany"></div>
+      </div>
+      <button class="btn-ghost" style="font-size:12px" onclick="applyBuiltUrl()">Apply →</button>
+    </div>
+    <div class="field-row cols-3" style="margin-bottom:14px">
+      <div class="field"><label>Number of jobs</label><input type="number" id="q-count" value="10" min="1" max="100"></div>
+      <div class="field" style="grid-column:span 2"><label>Additional URL (optional)</label><input type="text" id="q-url2" placeholder="Second search URL..."></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-scrape" onclick="scrapeJobs()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Scrape via Apify
+      </button>
+      <button class="btn-ghost" onclick="loadDemoJobs()">Load demo jobs</button>
+      <button class="btn-ghost" style="border-style:dashed" onclick="toggleRunIdPanel()">↻ Load from Run ID</button>
+    </div>
+    <div id="run-id-panel" class="hidden" style="margin-top:12px;background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--radius-sm);padding:12px 14px">
+      <p style="font-size:12px;font-weight:600;margin-bottom:4px">Reuse existing Apify run</p>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:10px">Find Run ID in Apify Console → Actors → LinkedIn Jobs Scraper → Runs</p>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="run-id-input" placeholder="e.g. jVf8J2QqfcX3h9IZB" style="flex:1;font-family:monospace;font-size:12px">
+        <button class="btn-ghost" id="btn-load-run" onclick="loadFromRunId()">Fetch</button>
+      </div>
+      <div id="run-id-msg"></div>
+    </div>
+    <div id="scrape-msg"></div>
+  </div>
+
+  <div class="card hidden" id="jobs-preview-card">
+    <div class="card-header">
+      <span class="card-title">Scraped jobs</span>
+      <div style="display:flex;gap:8px">
+        <span id="jobs-badge" class="badge badge-purple"></span>
+        <button class="btn-ghost" style="font-size:11px;padding:4px 12px" onclick="goTo('export')">Export to Sheet →</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Company</th><th>Position</th><th>City</th><th>Easy Apply?</th><th>Seniority</th><th>Applicants</th></tr></thead>
+        <tbody id="jobs-preview-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ EXPORT ══════════════════════════════ -->
+<section class="section" id="section-export">
+  <div class="page-header">
+    <h1 class="page-title">Export to RawData</h1>
+    <p class="page-sub">Write all scraped jobs to the <strong>RawData</strong> tab. Then use the <strong>Dedup</strong> button to filter new unique jobs into UniqueNewJobs.</p>
+  </div>
+
+  <div id="export-no-jobs" class="card" style="text-align:center;padding:40px">
+    <p style="font-size:28px;margin-bottom:10px">📋</p>
+    <p style="font-weight:500;margin-bottom:6px">No jobs scraped yet</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Scrape or load demo jobs first.</p>
+    <button class="btn-ghost" onclick="goTo('scrape')">← Back to Scrape</button>
+  </div>
+
+  <div id="export-content" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Ready to export</span>
+        <span id="export-count" class="badge badge-purple"></span>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:16px">
+        <table class="data-table">
+          <thead><tr><th>Company</th><th>Position</th><th>City</th><th>Posted</th><th>Easy Apply?</th><th>Seniority</th><th>Type</th><th>Applicants</th></tr></thead>
+          <tbody id="export-body"></tbody>
+        </table>
+      </div>
+      <hr>
+      <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+        Exports all jobs to the <code>RawData</code> tab in your Google Sheet. Then click <strong>Unique Jobs</strong> in the sidebar and use the <strong>Dedup RawData</strong> button to find new jobs and send them to <code>UniqueNewJobs</code>.
+      </p>
+      <div class="btn-row">
+        <button class="btn-primary" id="btn-export" onclick="exportJobs()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Export <span id="export-count-btn"></span> jobs to Sheet
+        </button>
+        <button class="btn-ghost" onclick="goTo('ssot')">Go to Unique Jobs →</button>
+      </div>
+      <div id="export-msg"></div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-header"><span class="card-title">Deduplicate RawData</span></div>
+      <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">Deduplicates <code>RawData</code> internally (by title+company+city), writes all unique jobs to <code>UniqueNewJobs</code>, and enriches each row with: <strong>Previously Scraped</strong> (TRUE/FALSE) + <strong>Old Application Status</strong> from SSOT + <strong>Priority</strong> (P0/P1/P2).</p>
+      <button class="btn-primary" id="btn-dedup" onclick="dedupRawData()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Dedup RawData
+      </button>
+      <div id="dedup-msg"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ UNIQUE JOBS ════════════════════════════ -->
+<section class="section" id="section-ssot">
+  <div class="page-header">
+    <h1 class="page-title">Unique Jobs</h1>
+    <p class="page-sub">Deduplicated jobs from the UniqueNewJobs tab — enriched with history from SSOT. Review then push to your master database.</p>
+  </div>
+
+  <!-- Load + Push controls -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <p style="font-size:13px;font-weight:500;margin-bottom:3px">UniqueNewJobs</p>
+        <p style="font-size:12px;color:var(--text2)">Run <strong>Dedup RawData</strong> first (on Scrape & Export page), then load here to review.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" id="btn-load-unj" onclick="loadUniqueJobs()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Load UniqueNewJobs
+        </button>
+        <button class="btn-ghost" id="btn-push-ssot" onclick="pushToSsot()" style="font-size:12px" disabled>
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Push to SSOT
+        </button>
+      </div>
+    </div>
+    <div id="unj-load-msg"></div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="unj-filters" style="display:none">
+    <input id="unj-search" type="text" placeholder="Search company or title..." style="min-width:200px" oninput="renderUniqueJobs()">
+    <select id="unj-city" onchange="renderUniqueJobs()"><option value="">All Cities</option></select>
+    <select id="unj-priority" onchange="renderUniqueJobs()">
+      <option value="">All Priorities</option>
+      <option>P0</option><option>P1</option><option>P2</option>
+    </select>
+    <select id="unj-german" onchange="renderUniqueJobs()">
+      <option value="">German Required: All</option>
+      <option>Required</option><option>Nice to Have</option><option>Not Mentioned</option>
+    </select>
+    <select id="unj-prev" onchange="renderUniqueJobs()">
+      <option value="">Previously Scraped: All</option>
+      <option value="TRUE">Yes</option><option value="FALSE">No</option>
+    </select>
+    <button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="clearUnjFilters()">Clear</button>
+  </div>
+
+  <!-- Empty state -->
+  <div id="unj-empty" class="hidden card" style="text-align:center;padding:32px">
+    <p style="font-size:22px;margin-bottom:8px">📋</p>
+    <p style="font-weight:500;margin-bottom:4px">No unique jobs found</p>
+    <p style="font-size:12px;color:var(--text2)">Run <strong>Dedup RawData</strong> on the Scrape & Export page first.</p>
+  </div>
+
+  <!-- Table -->
+  <div id="unj-table-wrap" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span id="unj-count" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th onclick="unjSort('company')">Company</th>
+            <th onclick="unjSort('title')">Position</th>
+            <th onclick="unjSort('city')">City</th>
+            <th onclick="unjSort('postedAt')">Date Posted</th>
+            <th onclick="unjSort('seniority')">Seniority</th>
+            <th onclick="unjSort('industry')">Industry</th>
+            <th onclick="unjSort('germanRequired')">German</th>
+            <th onclick="unjSort('previouslyScraped')">Prev. Scraped</th>
+            <th onclick="unjSort('oldAppStatus')">Old Status</th>
+            <th onclick="unjSort('priority')">Priority</th>
+          </tr>
+        </thead>
+        <tbody id="unj-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SSOT DATABASE ══════════════════════════ -->
+<section class="section" id="section-database">
+  <div class="page-header">
+    <h1 class="page-title">SSOT Database</h1>
+    <p class="page-sub">Your master job database. Filter, sort, update application status, and generate CV + Cover Letter per job.</p>
+  </div>
+
+  <!-- Load controls -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <p style="font-size:13px;font-weight:500;margin-bottom:3px">SSOT tab</p>
+        <p style="font-size:12px;color:var(--text2)">Master database — all jobs ever pushed to SSOT. Edit status inline, generate CV and Cover Letter per job.</p>
+      </div>
+      <button class="btn-primary" id="btn-load-db" onclick="loadDatabase()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Load SSOT
+      </button>
+    </div>
+    <div id="db-load-msg"></div>
+  </div>
+
+  <!-- Filter bar — multi-select dropdowns -->
+  <div id="db-filters" style="display:none;margin-bottom:16px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <input id="db-search" type="text" placeholder="Search company or title..." style="min-width:200px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:12px;padding:6px 10px;outline:none" oninput="renderDatabase()">
+      <button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="clearDbFilters()">Clear all</button>
+      <span id="db-count" style="font-size:12px;color:var(--text3);margin-left:auto"></span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="ms-wrap" id="ms-city">
+        <button class="ms-btn" onclick="toggleMs('ms-city')">City <span class="ms-arrow">▾</span></button>
+        <div class="ms-drop" style="min-width:200px">
+          <div style="padding:4px 6px 6px"><input id="ms-city-search" type="text" placeholder="Search city..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:4px 8px;box-sizing:border-box;outline:none" oninput="filterCityOptions(this.value)"></div>
+          <div id="ms-city-drop"></div>
+        </div>
+      </div>
+      <div class="ms-wrap" id="ms-priority"><button class="ms-btn" onclick="toggleMs('ms-priority')">Priority <span class="ms-arrow">▾</span></button><div class="ms-drop"><label><input type="checkbox" value="P0" onchange="renderDatabase()"> <span class="badge badge-green" style="font-size:10px">P0</span></label><label><input type="checkbox" value="P1" onchange="renderDatabase()"> <span class="badge badge-amber" style="font-size:10px">P1</span></label><label><input type="checkbox" value="P2" onchange="renderDatabase()"> <span class="badge badge-blue" style="font-size:10px">P2</span></label></div></div>
+      <div class="ms-wrap" id="ms-seniority"><button class="ms-btn" onclick="toggleMs('ms-seniority')">Seniority <span class="ms-arrow">▾</span></button><div class="ms-drop" id="ms-seniority-drop"></div></div>
+      <div class="ms-wrap" id="ms-german"><button class="ms-btn" onclick="toggleMs('ms-german')">German <span class="ms-arrow">▾</span></button><div class="ms-drop"><label><input type="checkbox" value="Required" onchange="renderDatabase()"> Required</label><label><input type="checkbox" value="Nice to Have" onchange="renderDatabase()"> Nice to Have</label><label><input type="checkbox" value="Not Mentioned" onchange="renderDatabase()"> Not Mentioned</label></div></div>
+      <div class="ms-wrap" id="ms-status"><button class="ms-btn" onclick="toggleMs('ms-status')">App Status <span class="ms-arrow">▾</span></button><div class="ms-drop">
+        <label><input type="checkbox" value="" onchange="renderDatabase()"> — (none)</label>
+        <label><input type="checkbox" value="Applied" onchange="renderDatabase()"> Applied</label>
+        <label><input type="checkbox" value="Closed" onchange="renderDatabase()"> Closed</label>
+        <label><input type="checkbox" value="Dropped" onchange="renderDatabase()"> Dropped</label>
+        <label><input type="checkbox" value="Duplicate" onchange="renderDatabase()"> Duplicate</label>
+        <label><input type="checkbox" value="In progress" onchange="renderDatabase()"> In progress</label>
+        <label><input type="checkbox" value="Not yet" onchange="renderDatabase()"> Not yet</label>
+        <label><input type="checkbox" value="On hold" onchange="renderDatabase()"> On hold</label>
+        <label><input type="checkbox" value="Not yet but dropped due to old data" onchange="renderDatabase()"> Not yet (old data)</label>
+      </div></div>
+      <div class="ms-wrap" id="ms-date"><button class="ms-btn" onclick="toggleMs('ms-date')">Scraped Date <span class="ms-arrow">▾</span></button><div class="ms-drop" id="ms-date-drop"></div></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="db-empty" class="hidden card" style="text-align:center;padding:32px">
+    <p style="font-size:22px;margin-bottom:8px">🗄️</p>
+    <p style="font-weight:500;margin-bottom:4px">SSOT tab is empty</p>
+    <p style="font-size:12px;color:var(--text2)">Go to <strong>Unique Jobs</strong> and click <strong>Push to SSOT</strong> first.</p>
+  </div>
+
+  <!-- Table -->
+  <div id="db-table-wrap" class="hidden">
+    <div class="tbl-wrap">
+      <table class="tbl" id="db-table">
+        <thead>
+          <tr>
+            <th onclick="dbSort('company')">Company</th>
+            <th onclick="dbSort('title')">Position</th>
+            <th onclick="dbSort('city')">City</th>
+            <th onclick="dbSort('postedAt')">Date Posted</th>
+            <th onclick="dbSort('scrapedDate')">Scraped Date</th>
+            <th onclick="dbSort('seniority')">Seniority</th>
+            <th onclick="dbSort('employmentType')">Employment</th>
+            <th onclick="dbSort('industry')">Industry</th>
+            <th onclick="dbSort('hiringManager')">Hiring Manager</th>
+            <th onclick="dbSort('germanRequired')">German</th>
+            <th onclick="dbSort('priority')">Priority</th>
+            <th onclick="dbSort('appStatus')">Status</th>
+            <th>JD</th>
+            <th>Links</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="db-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ APPLY TO JOB ══════════════════════════ -->
+<section class="section" id="section-apply">
+  <div class="page-header">
+    <h1 class="page-title">Apply to Job</h1>
+    <p class="page-sub">Paste a LinkedIn job posting URL or fill in manually — then create an optimized CV and cover letter.</p>
+  </div>
+
+  <div class="card">
+    <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.8">
+      <strong style="color:var(--text)">How to use:</strong> Open the LinkedIn job in your browser → copy the full job description text → paste it below → fill in Company and Title → click <strong style="color:var(--accent2)">✦ Optimize CV</strong> or <strong style="color:var(--amber)">✉ Cover Letter</strong>. Optionally paste the LinkedIn URL to save it as a reference link in the sheet.
+    </div>
+
+    <!-- LinkedIn URL + Apify fetch -->
+    <div class="field" style="margin-bottom:14px">
+      <label>LinkedIn Job URL <span style="font-size:10px;color:var(--text3);font-weight:400">— paste to auto-fill via Apify, or just use as reference</span></label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="aj-url" placeholder="https://www.linkedin.com/jobs/view/4391581434" style="flex:1">
+        <button class="btn-primary" id="btn-fetch-job" onclick="fetchSingleJob()" style="flex-shrink:0;font-size:12px;padding:7px 14px">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Fetch Job Details
+        </button>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:4px">Uses <code style="font-size:10px">apimaestro/linkedin-job-detail</code> actor — make sure it's activated in your Apify account. Takes ~5s.</p>
+    </div>
+
+    <hr style="margin:14px 0">
+
+    <!-- Manual fields -->
+    <div class="field-row cols-2" style="margin-bottom:12px">
+      <div class="field"><label>Company Name <span style="color:var(--red)">*</span></label><input type="text" id="aj-company" placeholder="e.g. Westernacher Solutions"></div>
+      <div class="field"><label>Job Title <span style="color:var(--red)">*</span></label><input type="text" id="aj-title" placeholder="e.g. QA Engineer"></div>
+    </div>
+    <div class="field-row cols-2" style="margin-bottom:12px">
+      <div class="field"><label>City</label><input type="text" id="aj-city" placeholder="e.g. Berlin"></div>
+      <div class="field"><label>Apply URL</label><input type="text" id="aj-applyurl" placeholder="https://..."></div>
+    </div>
+    <div class="field-row cols-2" style="margin-bottom:12px">
+      <div class="field"><label>Employment Type</label><input type="text" id="aj-emptype" placeholder="e.g. Full-time"></div>
+      <div class="field"><label>Hiring Manager (optional)</label><input type="text" id="aj-manager" placeholder="e.g. Felix Wagner"></div>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Job Description <span style="color:var(--red)">*</span></label>
+      <textarea id="aj-desc" rows="9" placeholder="Paste the full job description text here..."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" id="btn-aj-sheet" onclick="ajAppendToSheet()" style="font-size:12px">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Add to Jobs Sheet
+      </button>
+    </div>
+    <div id="aj-fetch-msg"></div>
+    <div id="aj-action-msg"></div>
+  </div>
+
+  <!-- Results -->
+
+</section>
+
+<!-- ══ TRACKER ════════════════════════════════ -->
+<section class="section" id="section-tracker">
+  <div class="page-header">
+    <h1 class="page-title">Tracker</h1>
+    <p class="page-sub">All documents created this session. Links are also saved back to your SSOT sheet.</p>
+  </div>
+  <div class="card">
+    <div id="tracker-empty" style="text-align:center;padding:28px">
+      <p style="font-size:22px;margin-bottom:8px">📋</p>
+      <p style="font-weight:500;margin-bottom:4px">No documents yet</p>
+      <p style="font-size:12px;color:var(--text2)">Optimize a CV or generate a cover letter to see links here.</p>
+    </div>
+    <div id="tracker-wrap" class="hidden" style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Company</th><th>Role</th><th>Date</th><th>Adjusted CV</th><th>Cover Letter</th></tr></thead>
+        <tbody id="tracker-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══ SETTINGS ════════════════════════════════ -->
+<section class="section" id="section-settings">
+  <div class="page-header">
+    <h1 class="page-title">API Keys</h1>
+    <p class="page-sub">Keys are saved to your .env file and persist across restarts.</p>
+  </div>
+  <div id="google-banner" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="g-dot" style="width:9px;height:9px;border-radius:50%;background:var(--text3);flex-shrink:0"></div>
+      <div>
+        <p style="font-size:13px;font-weight:500" id="g-text">Checking Google connection...</p>
+        <p style="font-size:11px;color:var(--text3)" id="g-sub">Connect once — tokens refresh automatically forever.</p>
+      </div>
+    </div>
+    <a href="/auth/google" class="btn-primary" id="g-btn" style="text-decoration:none;flex-shrink:0;font-size:12px;padding:7px 14px">Connect Google</a>
+  </div>
+  <div class="card">
+    <div class="field-row cols-2" style="margin-bottom:0">
+      <div class="field"><label>Apify API Token</label><input type="password" id="key-apify" placeholder="apify_api_XXXX"><p style="font-size:11px;color:var(--text3);margin-top:3px">apify.com → Settings → Integrations</p></div>
+      <div class="field"><label>Anthropic API Key</label><input type="password" id="key-anthropic" placeholder="sk-ant-XXXX"><p style="font-size:11px;color:var(--text3);margin-top:3px">console.anthropic.com/settings/keys</p></div>
+    </div>
+    <hr>
+    <div class="field-row cols-2" style="margin-bottom:0">
+      <div class="field"><label>Google Sheet ID</label><input type="text" id="key-sheet" placeholder="1BxiMVs0XRA5nFMdK..."><p style="font-size:11px;color:var(--text3);margin-top:3px">From Sheet URL: .../spreadsheets/d/<strong>THIS</strong>/edit</p></div>
+      <div class="field"><label>CV Google Doc ID</label><input type="text" id="key-cvdocid" placeholder="1V8YFlRbqYicIom1..."><p style="font-size:11px;color:var(--text3);margin-top:3px">From CV Doc URL: .../document/d/<strong>THIS</strong>/edit</p></div>
+    </div>
+    <hr>
+    <p style="font-size:12px;font-weight:600;margin-bottom:10px">Google OAuth Credentials</p>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7"><a href="https://console.cloud.google.com/apis/credentials" target="_blank">Create OAuth 2.0 credentials</a> in GCP → add redirect URI: <code>http://localhost:3001/auth/google/callback</code></p>
+    <div class="field-row cols-2" style="margin-bottom:18px">
+      <div class="field"><label>Google Client ID</label><input type="password" id="key-gclientid" placeholder="xxxx.apps.googleusercontent.com"></div>
+      <div class="field"><label>Google Client Secret</label><input type="password" id="key-gclientsecret" placeholder="GOCSPX-..."></div>
+    </div>
+    <button class="btn-primary" onclick="saveKeys()">Save All Keys</button>
+    <div id="keys-msg"></div>
+  </div>
+</section>
+
+</main>
+</div>
+<script>
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+const S = {
+  jobs: [],
+  ssot: [],
+  busy: new Set(),
+  tracker: [],
+};
+
+// ══════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════
+function goTo(step) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-step').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('section-' + step);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('.nav-step[data-step="' + step + '"]').forEach(el => el.classList.add('active'));
+  if (step === 'export') renderExport();
+}
+
+// ══════════════════════════════════════════════════
+// UNIQUE JOBS PAGE (Chunk 3)
+// ══════════════════════════════════════════════════
+const UNJ = { jobs: [], sortCol: 'priority', sortDir: 1 };
+
+async function loadUniqueJobs() {
+  const btn = el('btn-load-unj');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Loading...';
+  cmsg('unj-load-msg');
+  try {
+    const d = await (await fetch('/uniquenewjobs')).json();
+    if (d.error) throw new Error(d.error);
+    if (!d.jobs || !d.jobs.length) {
+      el('unj-empty').classList.remove('hidden');
+      el('unj-table-wrap').classList.add('hidden');
+      el('unj-filters').style.display = 'none';
+      throw new Error('UniqueNewJobs tab is empty. Run Dedup RawData first.');
+    }
+    UNJ.jobs = d.jobs;
+    // Populate city dropdown from data
+    const cities = [...new Set(d.jobs.map(j => j.city).filter(Boolean))].sort();
+    const cityEl = el('unj-city');
+    cityEl.innerHTML = '<option value="">All Cities</option>' + cities.map(c => '<option>' + c + '</option>').join('');
+    el('unj-empty').classList.add('hidden');
+    el('unj-table-wrap').classList.remove('hidden');
+    el('unj-filters').style.display = 'flex';
+    el('btn-push-ssot').disabled = false;
+    renderUniqueJobs();
+    msg('unj-load-msg', '✓ Loaded ' + d.jobs.length + ' unique jobs', 'ok');
+  } catch(e) {
+    msg('unj-load-msg', '⚠ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load UniqueNewJobs';
+  }
+}
+
+function getUnjFiltered() {
+  const search   = (el('unj-search') ? el('unj-search').value : '').toLowerCase();
+  const city     = el('unj-city')     ? el('unj-city').value     : '';
+  const priority = el('unj-priority') ? el('unj-priority').value : '';
+  const german   = el('unj-german')   ? el('unj-german').value   : '';
+  const prev     = el('unj-prev')     ? el('unj-prev').value     : '';
+
+  return UNJ.jobs.filter(j => {
+    if (search   && !((j.company||'').toLowerCase().includes(search) || (j.title||'').toLowerCase().includes(search))) return false;
+    if (city     && j.city !== city)                   return false;
+    if (priority && j.priority !== priority)           return false;
+    if (german   && j.germanRequired !== german)       return false;
+    if (prev     && j.previouslyScraped !== prev)      return false;
+    return true;
+  }).sort((a, b) => {
+    const col = UNJ.sortCol;
+    if (col === 'priority') {
+      const order = { P0: 0, P1: 1, P2: 2, '': 9 };
+      const va = order[a.priority] !== undefined ? order[a.priority] : 9;
+      const vb = order[b.priority] !== undefined ? order[b.priority] : 9;
+      return va > vb ? UNJ.sortDir : va < vb ? -UNJ.sortDir : 0;
+    }
+    const va = (a[col] || '').toString().toLowerCase();
+    const vb = (b[col] || '').toString().toLowerCase();
+    return va > vb ? UNJ.sortDir : va < vb ? -UNJ.sortDir : 0;
+  });
+}
+
+function renderUniqueJobs() {
+  const jobs = getUnjFiltered();
+  el('unj-count').textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's' : '') + ' shown';
+
+  // Update sort header indicators
+  document.querySelectorAll('#unj-table-wrap .tbl th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    const onc = th.getAttribute('onclick') || '';
+    const match = onc.match(/unjSort\('([^']+)'\)/);
+    if (match && match[1] === UNJ.sortCol) {
+      th.classList.add(UNJ.sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    }
+  });
+
+  function germanBadge(g) {
+    if (!g || g === 'Not Mentioned') return '<span style="font-size:11px;color:var(--text3)">—</span>';
+    if (g === 'Required')     return '<span class="badge badge-amber" style="font-size:10px">Required</span>';
+    if (g === 'Nice to Have') return '<span class="badge badge-blue" style="font-size:10px">Nice to Have</span>';
+    return '<span style="font-size:11px;color:var(--text3)">' + g + '</span>';
+  }
+
+  function prevBadge(p) {
+    if (p === 'TRUE')  return '<span class="badge badge-amber" style="font-size:10px">Previously seen</span>';
+    if (p === 'FALSE') return '<span class="badge badge-green" style="font-size:10px">New</span>';
+    return '<span style="color:var(--text3)">—</span>';
+  }
+
+  function prioBadge(p) {
+    if (!p) return '<span style="color:var(--text3)">—</span>';
+    const cls = p === 'P0' ? 'badge-green' : p === 'P1' ? 'badge-amber' : 'badge-blue';
+    return '<span class="badge ' + cls + '" style="font-size:10px">' + p + '</span>';
+  }
+
+  el('unj-tbody').innerHTML = jobs.map(j =>
+    '<tr>'
+    + '<td class="clip" title="' + (j.company||'') + '">' + (j.company||'—') + '</td>'
+    + '<td class="clip" style="max-width:220px" title="' + (j.title||'') + '">' + (j.title||'—') + '</td>'
+    + '<td>' + (j.city||'—') + '</td>'
+    + '<td>' + (j.postedAt ? j.postedAt.split(' ')[0].split('T')[0] : '—') + '</td>'
+    + '<td>' + (j.seniority||'—') + '</td>'
+    + '<td class="clip" title="' + (j.industry||'') + '">' + (j.industry||'—') + '</td>'
+    + '<td>' + germanBadge(j.germanRequired) + '</td>'
+    + '<td>' + prevBadge(j.previouslyScraped) + '</td>'
+    + '<td>' + (j.oldAppStatus||'—') + '</td>'
+    + '<td>' + prioBadge(j.priority) + '</td>'
+    + '</tr>'
+  ).join('');
+}
+
+function unjSort(col) {
+  if (UNJ.sortCol === col) UNJ.sortDir *= -1;
+  else { UNJ.sortCol = col; UNJ.sortDir = 1; }
+  renderUniqueJobs();
+}
+
+function clearUnjFilters() {
+  el('unj-search').value = '';
+  el('unj-city').value = '';
+  el('unj-priority').value = '';
+  el('unj-german').value = '';
+  el('unj-prev').value = '';
+  renderUniqueJobs();
+}
+
+async function pushToSsot() {
+  const btn = el('btn-push-ssot');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Pushing to SSOT...';
+  cmsg('unj-load-msg');
+  try {
+    const d = await post('/uniquenewjobs/push-to-ssot', {});
+    if (d.error) throw new Error(d.error);
+    msg('unj-load-msg', '✓ ' + d.message, 'ok');
+    btn.style.cssText = 'background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2);font-size:12px';
+    btn.textContent = '✓ ' + d.appended + ' pushed · ' + d.skipped + ' skipped';
+  } catch(e) {
+    msg('unj-load-msg', '⚠ ' + e.message, 'err');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Push to SSOT';
+  }
+}
+
+// ══════════════════════════════════════════════════
+// SSOT DATABASE
+// ══════════════════════════════════════════════════
+const DB = { jobs: [], sortCol: 'priority', sortDir: 1 };
+
+// ── Multi-select dropdown toggle ─────────────────
+function toggleMs(wrapperId) {
+  const wrap = el(wrapperId);
+  const drop = wrap.querySelector('.ms-drop');
+  const btn  = wrap.querySelector('.ms-btn');
+  const isOpen = drop.classList.contains('open');
+  // Close all others first
+  document.querySelectorAll('.ms-drop.open').forEach(d => {
+    d.classList.remove('open');
+    d.closest('.ms-wrap').querySelector('.ms-btn').classList.remove('active');
+  });
+  if (!isOpen) { drop.classList.add('open'); btn.classList.add('active'); }
+}
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-drop.open').forEach(d => {
+      d.classList.remove('open');
+      d.closest('.ms-wrap').querySelector('.ms-btn').classList.remove('active');
+    });
+  }
+});
+
+// ── Get checked values from a multi-select dropdown ──
+function getMsValues(wrapperId) {
+  const wrap = document.getElementById(wrapperId);
+  if (!wrap) return [];
+  return [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
+}
+
+// ── Update ms-btn label to show active count ─────
+function updateMsLabel(wrapperId, label) {
+  const vals = getMsValues(wrapperId);
+  const btn  = document.querySelector('#' + wrapperId + ' .ms-btn');
+  if (!btn) return;
+  btn.innerHTML = vals.length ? label + ' <span style="background:var(--accent2);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px">' + vals.length + '</span> <span class="ms-arrow">▾</span>'
+    : label + ' <span class="ms-arrow">▾</span>';
+}
+
+async function loadDatabase() {
+  const btn = el('btn-load-db');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Loading...';
+  cmsg('db-load-msg');
+  try {
+    const d = await (await fetch('/ssot/database')).json();
+    if (d.error) throw new Error(d.error);
+    if (!d.jobs || !d.jobs.length) {
+      el('db-empty').classList.remove('hidden');
+      el('db-table-wrap').classList.add('hidden');
+      el('db-filters').style.display = 'none';
+      throw new Error('SSOT tab is empty. Push jobs from Unique Jobs first.');
+    }
+    DB.jobs = d.jobs;
+
+    // Populate city multi-select from data
+    const cities = [...new Set(d.jobs.map(j => j.city).filter(Boolean))].sort();
+    const cityDrop = el('ms-city-drop');
+    if (cityDrop) {
+      cityDrop.innerHTML = cities.map(c => `<label><input type="checkbox" value="${c}" onchange="renderDatabase()"> ${c}</label>`).join('');
+      cityDrop.dataset.allCities = JSON.stringify(cities); // store for search
+    }
+
+    // Populate seniority multi-select from data
+    const seniorities = [...new Set(d.jobs.map(j => j.seniority).filter(Boolean))].sort();
+    const senDrop = el('ms-seniority-drop');
+    if (senDrop) senDrop.innerHTML = seniorities.map(s => `<label><input type="checkbox" value="${s}" onchange="renderDatabase()"> ${s}</label>`).join('');
+
+    // Populate scraped date multi-select (unique dates from Scraped Date column)
+    const dates = [...new Set(d.jobs.map(j => {
+      if (!j.scrapedDate) return null;
+      return j.scrapedDate.split(' ')[0].split('T')[0];
+    }).filter(Boolean))].sort().reverse(); // newest first
+    const dateDrop = el('ms-date-drop');
+    if (dateDrop) dateDrop.innerHTML = dates.map(dt => `<label><input type="checkbox" value="${dt}" onchange="renderDatabase()"> ${dt}</label>`).join('');
+
+    el('db-empty').classList.add('hidden');
+    el('db-table-wrap').classList.remove('hidden');
+    el('db-filters').style.display = 'block';
+    renderDatabase();
+    msg('db-load-msg', '✓ Loaded ' + d.jobs.length + ' jobs from SSOT (sheet had ' + (d.rowCount) + ' valid rows)', 'ok');
+  } catch(e) {
+    msg('db-load-msg', '⚠ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load SSOT';
+  }
+}
+
+function getDbFiltered() {
+  const search     = (el('db-search') ? el('db-search').value : '').toLowerCase();
+  const cities     = getMsValues('ms-city');
+  const priorities = getMsValues('ms-priority');
+  const seniorities= getMsValues('ms-seniority');
+  const germanVals = getMsValues('ms-german');
+  const statuses   = getMsValues('ms-status');
+  const dates      = getMsValues('ms-date');
+
+  // Update button labels
+  updateMsLabel('ms-city',     'City');
+  updateMsLabel('ms-priority', 'Priority');
+  updateMsLabel('ms-seniority','Seniority');
+  updateMsLabel('ms-german',   'German');
+  updateMsLabel('ms-status',   'App Status');
+  updateMsLabel('ms-date',     'Scraped Date');
+
+  return DB.jobs.filter(j => {
+    if (search       && !((j.company||'').toLowerCase().includes(search) || (j.title||'').toLowerCase().includes(search))) return false;
+    if (cities.length     && !cities.includes(j.city))          return false;
+    if (priorities.length && !priorities.includes(j.priority))  return false;
+    if (seniorities.length&& !seniorities.includes(j.seniority))return false;
+    if (germanVals.length && !germanVals.includes(j.germanRequired)) return false;
+    if (statuses.length   && !statuses.includes(j.appStatus||''))    return false;
+    if (dates.length) {
+      const jDate = (j.scrapedDate || '').split(' ')[0].split('T')[0];
+      if (!dates.includes(jDate)) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const col = DB.sortCol;
+    if (col === 'priority') {
+      const order = { P0: 0, P1: 1, P2: 2, '': 9 };
+      const va = order[a.priority] !== undefined ? order[a.priority] : 9;
+      const vb = order[b.priority] !== undefined ? order[b.priority] : 9;
+      return (va - vb) * DB.sortDir;
+    }
+    const va = (a[col] || '').toString().toLowerCase();
+    const vb = (b[col] || '').toString().toLowerCase();
+    return va > vb ? DB.sortDir : va < vb ? -DB.sortDir : 0;
+  });
+}
+
+// ── JD modal (click to open) ─────────────────────
+function showJdByIdx(idx) {
+  const job = DB.jobs[parseInt(idx)];
+  if (!job) return;
+  showJd(job.company, job.title, job.description);
+}
+
+function showJd(company, title, text) {
+  let overlay = el('jd-modal-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'jd-modal-overlay';
+    overlay.innerHTML = '<div id="jd-modal-box"><div id="jd-modal-header"><span id="jd-modal-title"></span><span id="jd-modal-close" onclick="hideJd()">✕</span></div><div id="jd-modal-body"></div></div>';
+    overlay.addEventListener('click', e => { if (e.target === overlay) hideJd(); });
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('jd-modal-title').textContent = title + ' — ' + company;
+  document.getElementById('jd-modal-body').textContent = text || '(no description)';
+  overlay.classList.add('open');
+}
+function hideJd() {
+  const o = el('jd-modal-overlay');
+  if (o) o.classList.remove('open');
+}
+
+function filterCityOptions(query) {
+  const drop = el('ms-city-drop');
+  if (!drop) return;
+  const allCities = JSON.parse(drop.dataset.allCities || '[]');
+  const filtered = query ? allCities.filter(c => c.toLowerCase().includes(query.toLowerCase())) : allCities;
+  // Preserve checked state
+  const checked = new Set([...drop.querySelectorAll('input:checked')].map(i => i.value));
+  drop.innerHTML = filtered.map(c => `<label><input type="checkbox" value="${c}" ${checked.has(c)?'checked':''} onchange="renderDatabase()"> ${c}</label>`).join('');
+}
+
+function renderDatabase() {
+  const jobs = getDbFiltered();
+  const countEl = el('db-count');
+  if (countEl) countEl.textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's' : '') + ' shown';
+
+  // Update sort indicators
+  document.querySelectorAll('#db-table thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    const onc = th.getAttribute('onclick') || '';
+    const match = onc.match(/dbSort\('([^']+)'\)/);
+    if (match && match[1] === DB.sortCol) th.classList.add(DB.sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+
+  const statusOptions = ['','Applied','Closed','Dropped','Duplicate','In progress','Not yet','On hold','Not yet but dropped due to old data'];
+
+  function germanBadge(g) {
+    if (!g || g === 'Not Mentioned') return '<span style="font-size:11px;color:var(--text3)">—</span>';
+    if (g === 'Required')     return '<span class="badge badge-amber" style="font-size:10px">Required</span>';
+    if (g === 'Nice to Have') return '<span class="badge badge-blue"  style="font-size:10px">Nice to Have</span>';
+    return '<span style="font-size:11px;color:var(--text3)">' + g + '</span>';
+  }
+
+  function prioBadge(p) {
+    if (!p) return '<span style="color:var(--text3)">—</span>';
+    const cls = p === 'P0' ? 'badge-green' : p === 'P1' ? 'badge-amber' : 'badge-blue';
+    return '<span class="badge ' + cls + '" style="font-size:10px">' + p + '</span>';
+  }
+
+  function statusBadge(s) {
+    if (!s) return '<span style="color:var(--text3);font-size:11px">—</span>';
+    const map = { Applied:'badge-blue', Interviewing:'badge-green', Offer:'badge-green', Rejected:'badge-amber', Withdrawn:'badge-amber' };
+    const cls = map[s] || '';
+    return cls ? '<span class="badge ' + cls + '" style="font-size:10px">' + s + '</span>' : '<span style="font-size:11px">' + s + '</span>';
+  }
+
+  el('db-tbody').innerHTML = jobs.map(j => {
+    const realIdx = DB.jobs.indexOf(j);
+    const busy    = S.busy.has('db-' + realIdx);
+    const hasCv    = !!j.adjustedCvUrl;
+    const hasCover = !!j.coverLetterUrl;
+
+    // Scraped Date: from Scraped Date column (injected on push-to-ssot)
+    const dateStr = j.scrapedDate ? j.scrapedDate.split(' ')[0].split('T')[0] : '—';
+
+    // Status dropdown (inline editable)
+    const statusSelect = '<select class="db-status-sel" data-idx="' + realIdx + '" onchange="updateDbStatus(this)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:3px 6px;cursor:pointer;max-width:110px">'
+      + statusOptions.map(s => '<option value="' + s + '"' + (j.appStatus === s || (!j.appStatus && s === '') ? ' selected' : '') + '>' + (s||'—') + '</option>').join('')
+      + '</select>';
+
+    // Doc links
+    const docLinks = []
+    if (hasCv)    docLinks.push('<a href="' + j.adjustedCvUrl + '" target="_blank" style="color:#9d8fff;font-size:11px" title="Adjusted CV">📄 CV</a>');
+    if (hasCover) docLinks.push('<a href="' + j.coverLetterUrl + '" target="_blank" style="color:var(--amber);font-size:11px" title="Cover Letter">✉ Cover</a>');
+    const docCell = docLinks.length ? docLinks.join(' · ') : '<span style="color:var(--text3);font-size:11px">—</span>';
+
+    // Action buttons
+    const actionBtns = busy
+      ? '<span class="spinner spinner-sm"></span>'
+      : '<button class="btn-cv" style="font-size:10px;padding:3px 8px" onclick="doDbCv(' + realIdx + ')">' + (hasCv ? '↺ CV' : '✦ CV') + '</button>'
+        + ' <button class="btn-cover" style="font-size:10px;padding:3px 8px;margin-top:3px" onclick="doDbCover(' + realIdx + ')">' + (hasCover ? '↺ Cover' : '✉') + '</button>';
+
+    // JD click cell — store description in data attribute to avoid JS escaping issues
+    const jdCell = j.description
+      ? '<td class="jd-cell" data-idx="' + realIdx + '" onclick="showJdByIdx(this.dataset.idx)">📋</td>'
+      : '<td style="text-align:center;color:var(--text3)">—</td>';
+
+    // LinkedIn link
+    const liLink = j.linkedInUrl
+      ? '<a href="' + j.linkedInUrl + '" target="_blank" style="font-size:11px;color:var(--accent2)">↗ LI</a>'
+      : '';
+
+    return '<tr id="db-row-' + realIdx + '">'
+      + '<td class="clip" title="' + (j.company||'') + '">' + (j.company||'—') + '</td>'
+      + '<td class="clip" style="max-width:280px;min-width:180px" title="' + (j.title||'') + '">' + (j.title||'—') + '</td>'
+      + '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (j.city||'—') + '</td>'
+      + '<td style="white-space:nowrap;color:var(--text3)">' + (j.postedAt ? j.postedAt.split(' ')[0].split('T')[0] : '—') + '</td>'
+      + '<td style="white-space:nowrap;color:var(--text3)">' + dateStr + '</td>'
+      + '<td style="color:var(--text3);white-space:nowrap">' + (j.seniority||'—') + '</td>'
+      + '<td style="color:var(--text3);white-space:nowrap">' + (j.employmentType||'—') + '</td>'
+      + '<td class="clip" title="' + (j.industry||'') + '">' + (j.industry||'—') + '</td>'
+      + '<td style="color:var(--text3);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis" title="' + (j.hiringManager||'') + '">' + (j.hiringManager||'—') + '</td>'
+      + '<td>' + germanBadge(j.germanRequired) + '</td>'
+      + '<td>' + prioBadge(j.priority) + '</td>'
+      + '<td>' + statusSelect + '</td>'
+      + jdCell
+      + '<td style="white-space:nowrap">' + (liLink ? liLink + ' · ' : '') + docCell + '</td>'
+      + '<td style="white-space:nowrap" id="db-actions-' + realIdx + '">' + actionBtns + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function dbSort(col) {
+  if (DB.sortCol === col) DB.sortDir *= -1;
+  else { DB.sortCol = col; DB.sortDir = 1; }
+  renderDatabase();
+}
+
+function clearDbFilters() {
+  el('db-search').value = '';
+  document.querySelectorAll('#db-filters input[type=checkbox]').forEach(c => c.checked = false);
+  document.querySelectorAll('#db-filters .ms-btn').forEach(b => {
+    b.classList.remove('active');
+    // Reset label text (remove count badge)
+    const label = b.textContent.replace(/\d+/, '').replace(/\s+/g,' ').trim();
+  });
+  // Re-render labels
+  ['ms-city','ms-priority','ms-seniority','ms-german','ms-status','ms-date'].forEach(id => {
+    const btn = document.querySelector('#' + id + ' .ms-btn');
+    if (btn) {
+      const labels = {
+        'ms-city':'City','ms-priority':'Priority','ms-seniority':'Seniority',
+        'ms-german':'German','ms-status':'App Status','ms-date':'Scraped Date'
+      };
+      btn.innerHTML = labels[id] + ' <span class="ms-arrow">▾</span>';
+      btn.classList.remove('active');
+    }
+  });
+  renderDatabase();
+}
+
+
+function markDone(step) {
+  const n = document.getElementById('snum-' + step);
+  if (n) n.textContent = '✓';
+  document.querySelectorAll('.nav-step[data-step="' + step + '"]').forEach(el => el.classList.add('done'));
+}
+
+// ══════════════════════════════════════════════════
+// PROXY / GOOGLE AUTH
+// ══════════════════════════════════════════════════
+async function checkProxy() {
+  const dot = document.getElementById('proxy-dot');
+  const lbl = document.getElementById('proxy-label');
+  try {
+    const d = await (await fetch('/health')).json();
+    dot.className = 'status-dot ok';
+    lbl.textContent = d.googleAuth ? 'Connected ✓' : 'Running (Google not linked)';
+  } catch { dot.className = 'status-dot err'; lbl.textContent = 'Not running'; }
+}
+
+async function checkGoogleAuth() {
+  try {
+    const d = await (await fetch('/auth/status')).json();
+    const dot = document.getElementById('g-dot');
+    const txt = document.getElementById('g-text');
+    const btn = document.getElementById('g-btn');
+    if (d.connected) {
+      dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:#3ecf8e;box-shadow:0 0 6px #3ecf8e;flex-shrink:0';
+      txt.textContent = 'Google account connected ✓';
+      btn.textContent = 'Reconnect'; btn.className = 'btn-ghost';
+    } else {
+      dot.style.cssText = 'width:9px;height:9px;border-radius:50%;background:#f87171;flex-shrink:0';
+      txt.textContent = 'Google not connected — add Client ID + Secret below then click Connect Google';
+    }
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════
+// KEYS
+// ══════════════════════════════════════════════════
+function saveKeys() {
+  fetch('/keys', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    apify: v('key-apify'), anthropic: v('key-anthropic'), sheetId: v('key-sheet'),
+    gclientId: v('key-gclientid'), gclientSecret: v('key-gclientsecret'), cvDocId: v('key-cvdocid'),
+  })}).then(() => msg('keys-msg', '✓ Keys saved to .env', 'ok'));
+}
+
+// ══════════════════════════════════════════════════
+// URL BUILDER
+// ══════════════════════════════════════════════════
+function toggleUrlBuilder() { el('url-builder').classList.toggle('hidden'); }
+function applyBuiltUrl() {
+  const kw = v('b-kw'); if (!kw) return;
+  el('q-url').value = 'https://www.linkedin.com/jobs/search/?keywords=' + encodeURIComponent(kw)
+    + (v('b-loc') ? '&location=' + encodeURIComponent(v('b-loc')) : '');
+  el('url-builder').classList.add('hidden');
+}
+
+// ══════════════════════════════════════════════════
+// SCRAPE
+// ══════════════════════════════════════════════════
+async function scrapeJobs() {
+  const url1 = v('q-url'); if (!url1) { msg('scrape-msg','Paste a LinkedIn search URL first.','err'); return; }
+  const btn = el('btn-scrape');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Scraping...';
+  cmsg('scrape-msg');
+  const urls = [url1]; if (v('q-url2')) urls.push(v('q-url2'));
+  try {
+    const start = await post('/scrape', { urls, count: parseInt(v('q-count'))||10 });
+    if (start.error) throw new Error(start.error);
+    msg('scrape-msg','⏳ Scraping LinkedIn...','info');
+    for (let i = 0; i < 40; i++) {
+      await sleep(4000);
+      const poll = await (await fetch('/scrape/status/' + start.runId)).json();
+      if (poll.status === 'SUCCEEDED') break;
+      if (poll.status === 'FAILED' || poll.status === 'ABORTED') throw new Error('Run ' + poll.status + (poll.errorMessage?' — '+poll.errorMessage:''));
+      msg('scrape-msg','⏳ Running... (' + ((i+1)*4) + 's)','info');
+    }
+    const items = await (await fetch('/scrape/results/' + start.runId)).json();
+    if (!items.length) throw new Error('No jobs found. Try a different search URL.');
+    S.jobs = items; finishScrape(); cmsg('scrape-msg');
+  } catch(e) { msg('scrape-msg', e.message, 'err'); }
+  finally { btn.disabled=false; btn.innerHTML='<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Scrape via Apify'; }
+}
+
+function loadDemoJobs() {
+  S.jobs = [
+    {id:'d1',standardizedTitle:'Senior QA Engineer',company:'N26',location:'Berlin, Germany',salary:'€80k–€110k',link:'https://n26.com/careers',applyMethod:'SimpleOnsiteApply',postedAt:'2026-03-20T00:00:00Z',companyAddressLocality:'Berlin',seniorityLevel:'Mid-Senior level',employmentType:'Full-time',workplaceTypes:['Hybrid'],applicantsCount:'42',jobPosterName:'HR Team',descriptionText:'Senior QA Engineer. Stack: Playwright, TypeScript, Selenium, API testing, CI/CD, GitHub Actions. Own test automation end to end, work closely with developers, and drive quality gates for releases. Fintech experience preferred.'},
+    {id:'d2',standardizedTitle:'Test Automation Engineer',company:'Zalando',location:'Berlin, Germany',salary:'€70k–€95k',link:'https://jobs.zalando.com',applyMethod:'',postedAt:'2026-03-18T00:00:00Z',companyAddressLocality:'Berlin',seniorityLevel:'Mid-Senior level',employmentType:'Full-time',workplaceTypes:['Hybrid'],applicantsCount:'89',jobPosterName:'Tech Recruiting',descriptionText:'Test Automation Engineer. Kotlin, Java, Selenium, REST API testing, Kubernetes, AWS. Build and maintain test frameworks for microservices architecture.'},
+    {id:'d3',standardizedTitle:'QA Engineer',company:'Delivery Hero',location:'Berlin/Remote',salary:'€65k–€90k',link:'https://careers.deliveryhero.com',applyMethod:'SimpleOnsiteApply',postedAt:'2026-03-15T00:00:00Z',companyAddressLocality:'Berlin',seniorityLevel:'Mid level',employmentType:'Full-time',workplaceTypes:['Remote'],applicantsCount:'120',jobPosterName:'People Team',descriptionText:'QA Engineer for food delivery platform. Playwright, React Testing Library, TypeScript, Appium for mobile. Write E2E tests, maintain CI pipelines in cross-functional squads.'},
+  ];
+  finishScrape();
+}
+
+function finishScrape() {
+  renderJobsPreview();
+  markDone('scrape');
+  goTo('export');
+}
+
+function renderJobsPreview() {
+  const card = el('jobs-preview-card');
+  card.classList.remove('hidden');
+  el('jobs-badge').textContent = S.jobs.length + ' jobs';
+  el('jobs-preview-body').innerHTML = S.jobs.map(j => {
+    const isEasy = j.applyMethod === 'SimpleOnsiteApply';
+    return '<tr><td class="td-clip">' + (j.company||'—') + '</td>'
+      + '<td class="td-clip">' + (j.standardizedTitle||j.title||'—') + '</td>'
+      + '<td style="color:var(--text3)">' + (j.companyAddressLocality||(j.location||'').split(',')[0]||'—') + '</td>'
+      + '<td>' + (isEasy?'<span class="badge badge-green">Easy Apply</span>':'<span class="badge badge-amber">External</span>') + '</td>'
+      + '<td style="color:var(--text3)">' + (j.seniorityLevel||'—') + '</td>'
+      + '<td style="color:var(--text3)">' + (j.applicantsCount||'—') + '</td></tr>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// RUN ID LOADER
+// ══════════════════════════════════════════════════
+function toggleRunIdPanel() { el('run-id-panel').classList.toggle('hidden'); }
+async function loadFromRunId() {
+  const runId = v('run-id-input'); if (!runId) { msg('run-id-msg','Paste a Run ID.','err'); return; }
+  const btn = el('btn-load-run'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  cmsg('run-id-msg');
+  try {
+    const poll = await (await fetch('/scrape/status/' + runId)).json();
+    if (poll.status && poll.status !== 'SUCCEEDED') throw new Error('Run status: ' + poll.status);
+    const items = await (await fetch('/scrape/results/' + runId)).json();
+    if (!items.length) throw new Error('No results in this run.');
+    S.jobs = items; finishScrape();
+    msg('run-id-msg','✓ Loaded ' + items.length + ' jobs','ok');
+    setTimeout(() => el('run-id-panel').classList.add('hidden'), 1500);
+  } catch(e) { msg('run-id-msg', e.message, 'err'); }
+  finally { btn.disabled=false; btn.textContent='Fetch'; }
+}
+
+// ══════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════
+function renderExport() {
+  if (!S.jobs.length) { el('export-no-jobs').style.display='block'; el('export-content').classList.add('hidden'); return; }
+  el('export-no-jobs').style.display='none'; el('export-content').classList.remove('hidden');
+  el('export-count').textContent = S.jobs.length + ' jobs';
+  el('export-count-btn').textContent = S.jobs.length;
+  el('export-body').innerHTML = S.jobs.map(j => {
+    const isEasy = j.applyMethod === 'SimpleOnsiteApply';
+    const date   = j.postedAt ? new Date(j.postedAt).toLocaleDateString('en-GB') : '—';
+    const city   = j.companyAddressLocality || (j.location||'').split(',')[0].trim() || '—';
+    return '<tr><td class="td-clip">'+(j.company||'—')+'</td>'
+      +'<td class="td-clip">'+(j.standardizedTitle||j.title||'—')+'</td>'
+      +'<td style="color:var(--text3)">'+city+'</td>'
+      +'<td style="color:var(--text3)">'+date+'</td>'
+      +'<td>'+(isEasy?'<span class="badge badge-green">Easy Apply</span>':'<span class="badge badge-amber">External</span>')+'</td>'
+      +'<td style="color:var(--text3)">'+(j.seniorityLevel||'—')+'</td>'
+      +'<td style="color:var(--text3)">'+(j.employmentType||'—')+'</td>'
+      +'<td style="color:var(--text3)">'+(j.applicantsCount||'—')+'</td></tr>';
+  }).join('');
+}
+
+async function exportJobs() {
+  const btn = el('btn-export'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Exporting...';
+  cmsg('export-msg');
+  try {
+    const d = await post('/sheets/append-jobs', { jobs: S.jobs });
+    if (d.error) throw new Error(d.error);
+    markDone('export');
+    btn.className='btn-ghost'; btn.style.color='var(--green)'; btn.textContent='✓ '+d.rowsAdded+' jobs exported';
+    msg('export-msg','✓ Jobs saved to the Jobs tab. Now go to Google Sheets, filter the jobs you want to apply to, and copy those rows into a tab named SSOT. Then click My Jobs (SSOT) in the sidebar.','ok');
+  } catch(e) { msg('export-msg',e.message,'err'); btn.disabled=false; btn.innerHTML='<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> Export '+S.jobs.length+' jobs to Sheet'; }
+}
+
+// ══════════════════════════════════════════════════
+// SSOT
+// ══════════════════════════════════════════════════
+function smsg(idx, text, type) { msg('smsg-'+idx, text, type); }
+
+// ── Dedup RawData ──────────────────────────────────────────────────
+async function dedupRawData() {
+  // Update all dedup buttons
+  document.querySelectorAll('#btn-dedup').forEach(b => {
+    b.disabled = true;
+    b.innerHTML = '<span class="spinner"></span> Processing...';
+  });
+  cmsg('dedup-msg'); cmsg('ssot-load-msg');
+  try {
+    const d = await post('/rawdata/dedup', {});
+    if (d.error) throw new Error(d.error);
+    const summary = '✓ ' + d.message;
+    msg('dedup-msg', summary, 'ok');
+    msg('ssot-load-msg', summary, 'ok');
+    // Auto-reload UniqueNewJobs list
+    if (d.uniqueCount > 0) await loadUniqueJobs();
+    document.querySelectorAll('#btn-dedup').forEach(b => {
+      b.disabled = false;
+      b.style.cssText = 'background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2)';
+      b.textContent = '✓ ' + d.uniqueCount + ' unique · ' + d.dupCount + ' dupes · ' + d.prevScrapedCount + ' prev seen';
+    });
+  } catch(e) {
+    msg('dedup-msg', '⚠ ' + e.message, 'err');
+    msg('ssot-load-msg', '⚠ ' + e.message, 'err');
+    document.querySelectorAll('#btn-dedup').forEach(b => {
+      b.disabled = false;
+      b.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Dedup RawData';
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════
+// TRACKER
+// ══════════════════════════════════════════════════
+function addTracker(job, cvUrl, coverUrl) {
+  const ex = S.tracker.find(t => t.company===job.company && t.title===job.title);
+  if (ex) { if(cvUrl) ex.cvUrl=cvUrl; if(coverUrl) ex.coverUrl=coverUrl; }
+  else S.tracker.push({ date:new Date().toLocaleDateString('en-GB'), company:job.company, title:job.title, cvUrl:cvUrl||'', coverUrl:coverUrl||'' });
+  const empty = el('tracker-empty'); const wrap = el('tracker-wrap');
+  empty.style.display='none'; wrap.classList.remove('hidden');
+  el('tracker-body').innerHTML = S.tracker.map(t =>
+    '<tr><td>'+t.company+'</td><td style="color:var(--text2)">'+t.title+'</td><td style="color:var(--text3)">'+t.date+'</td>'
+    +'<td>'+(t.cvUrl?'<a href="'+t.cvUrl+'" target="_blank" style="color:#9d8fff">CV ↗</a>':'—')+'</td>'
+    +'<td>'+(t.coverUrl?'<a href="'+t.coverUrl+'" target="_blank" style="color:var(--amber)">Letter ↗</a>':'—')+'</td></tr>'
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════
+const el = id => document.getElementById(id);
+const v  = id => (el(id)||{}).value?.trim() || '';
+function msg(id, txt, type) { const e=el(id); if(e){e.className='msg msg-'+type;e.textContent=txt;} }
+function cmsg(id) { const e=el(id); if(e){e.className='';e.textContent='';} }
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+async function post(url, body) {
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════
+// ══ APPLY TO JOB ══════════════════════════════════════════════════
+let ajJob = null; // the current single job being worked on
+
+function ajGetManualJob() {
+  return {
+    id: 'manual-' + Date.now(),
+    company:        v('aj-company'),
+    title:          v('aj-title'),
+    standardizedTitle: v('aj-title'),
+    city:           v('aj-city'),
+    location:       v('aj-city'),
+    companyAddressLocality: v('aj-city'),
+    applyUrl:       v('aj-applyurl'),
+    link:           v('aj-url') || v('aj-applyurl'),
+    url:            v('aj-url') || v('aj-applyurl'),
+    employmentType: v('aj-emptype'),
+    jobPosterName:  v('aj-manager'),
+    description:    v('aj-desc'),
+    descriptionText:v('aj-desc'),
+    applyMethod:    '',
+    seniorityLevel: '',
+    workplaceTypes: [],
+    industries:     '',
+    applicantsCount:'',
+    postedAt:       '',
+  };
+}
+
+function ajShowPreview(job) {
+  ajJob = job;
+  // Fill all form fields from fetched job data
+  if (job.company)                              el('aj-company').value  = job.company;
+  if (job.title || job.standardizedTitle)       el('aj-title').value    = job.standardizedTitle || job.title;
+  if (job.city || job.companyAddressLocality)   el('aj-city').value     = job.companyAddressLocality || job.city || (job.location||'').split(',')[0].trim();
+  if (job.applyUrl || job.link || job.url)      el('aj-applyurl').value = job.applyUrl || job.link || job.url;
+  if (job.employmentType)                       el('aj-emptype').value  = job.employmentType;
+  if (job.jobPosterName)                        el('aj-manager').value  = job.jobPosterName;
+  if (job.descriptionText || job.description)   el('aj-desc').value     = job.descriptionText || job.description;
+  if (job.url || job.link)                      el('aj-url').value      = job.url || job.link;
+}
+
+async function fetchSingleJob() {
+  const url = v('aj-url');
+  if (!url) { msg('aj-fetch-msg','Paste a LinkedIn job URL first.','err'); return; }
+  const btn = el('btn-fetch-job');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Fetching...';
+  cmsg('aj-fetch-msg');
+  try {
+    const start = await post('/job/fetch', { url });
+    if (start.error) throw new Error(start.error);
+    msg('aj-fetch-msg','⏳ Fetching job details...','info');
+    // Poll run status
+    for (let i = 0; i < 20; i++) {
+      await sleep(3000);
+      const poll = await (await fetch('/scrape/status/' + start.runId)).json();
+      if (poll.status === 'SUCCEEDED') break;
+      if (poll.status === 'FAILED' || poll.status === 'ABORTED') throw new Error('Run ' + poll.status + (poll.errorMessage ? ': ' + poll.errorMessage : ''));
+      msg('aj-fetch-msg','⏳ Fetching... (' + ((i+1)*3) + 's)','info');
+    }
+    // Use /job/fetch-results which maps apimaestro output format
+    const job = await (await fetch('/job/fetch-results/' + start.runId)).json();
+    if (!job || job.error) throw new Error((job && job.error) || 'No data returned — fill in manually.');
+    ajShowPreview(job);
+    msg('aj-fetch-msg','✓ Job loaded — check fields and edit if needed.','ok');
+  } catch(e) {
+    msg('aj-fetch-msg', e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Fetch Job Details';
+  }
+}
+
+// Build job object from manual fields
+function ajEnsureJob() {
+  const manual = ajGetManualJob();
+  if (!manual.company || !manual.title || !manual.description) return null;
+  ajJob = manual;
+  return ajJob;
+}
+
+
+
+async function ajAppendToSheet() {
+  // Build job from current form fields (works whether fetched or manual)
+  const job = {
+    company:        v('aj-company'),
+    title:          v('aj-title'),
+    standardizedTitle: v('aj-title'),
+    companyAddressLocality: v('aj-city'),
+    location:       v('aj-city'),
+    applyUrl:       v('aj-applyurl'),
+    link:           v('aj-url') || v('aj-applyurl'),
+    employmentType: v('aj-emptype'),
+    jobPosterName:  v('aj-manager'),
+    descriptionText:v('aj-desc'),
+    description:    v('aj-desc'),
+    applyMethod:    ajJob?.applyMethod || '',
+    seniorityLevel: ajJob?.seniorityLevel || '',
+    workplaceTypes: ajJob?.workplaceTypes || [],
+    industries:     ajJob?.industries || '',
+    applicantsCount:ajJob?.applicantsCount || '',
+    postedAt:       ajJob?.postedAt || '',
+    jobPosterProfileUrl: ajJob?.jobPosterProfileUrl || '',
+  };
+  if (!job.company || !job.title) { msg('aj-action-msg','Fill in at least Company and Title first.','err'); return; }
+  const btn = el('btn-aj-sheet');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Adding...';
+  cmsg('aj-action-msg');
+  try {
+    const d = await post('/job/append-to-sheet', { job });
+    if (d.error) throw new Error(d.error);
+    btn.className = 'btn-success'; btn.textContent = '✓ Added to Jobs Sheet';
+    msg('aj-action-msg','✓ Job added to the Jobs tab in your Google Sheet.','ok');
+  } catch(e) {
+    msg('aj-action-msg','⚠ ' + e.message,'err');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> Add to Jobs Sheet';
+  }
+}
+
+
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+checkProxy();
+checkGoogleAuth();
+</script>
+</body>
+</html>
