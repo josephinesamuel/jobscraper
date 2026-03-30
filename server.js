@@ -1150,25 +1150,54 @@ function assignPriority(title, city) {
   const t = (title || "").toLowerCase();
   const c = (city  || "").toLowerCase();
 
-  // City tier
-  const isBerlin  = c.includes("berlin");
-  const isMunich  = c.includes("munich") || c.includes("münchen") || c.includes("munchen");
+  // ── City tier ─────────────────────────────────────────────────────
+  const isBerlin = c.includes("berlin");
+  const isMunich = c.includes("munich") || c.includes("münchen") || c.includes("munchen");
 
-  // Role tier — senior/lead/head = low, working student/junior/QA/PM/PO = high
-  const isSenior = /\b(senior|lead|head|principal|staff|director|vp|vice president|leitend|leiter|chef)\b/.test(t);
-  const isHighRole = /\b(working student|werkstudent|junior|jr\.?|product manager|product owner|produktmanager|produktowner|qa engineer|qe|quality assurance|quality engineer|sdet|test engineer|software development engineer|software tester|testautomatisierung|tester|automation engineer)\b/.test(t);
+  // ── Role detection ────────────────────────────────────────────────
+
+  // Working student (highest role priority)
+  const isWorkingStudent = /\b(werkstudent|working student|student assistant|studentische hilfskraft|hiwi)\b/.test(t)
+    || /\b(student.*intern|intern.*student)\b/.test(t);
+
+  // Junior roles (high priority)
+  const isJunior = /\b(junior|jr\.?|entry.?level|associate|berufseinsteiger|einsteiger|nachwuchs)\b/.test(t)
+    && !isWorkingStudent;
+
+  // Product Manager / Product Owner (high/medium)
+  const isProductRole = /\b(product manager|product owner|produktmanager|produkt manager|produkt owner|produktowner|pm\b|po\b)\b/.test(t)
+    && !isWorkingStudent && !isJunior;
+
+  // Senior / Lead / Head (low priority)
+  // Note: "manager" alone excluded — "product manager" is caught by isProductRole above
+  const isSenior = /\b(senior|sr\.?|lead|head of|head,|principal|staff|director|vp\b|vice president|leitend|leiter|chef|gruppenleiter)\b/.test(t)
+    && !isWorkingStudent && !isJunior;
+
+  // ── Priority matrix ───────────────────────────────────────────────
+  //
+  //                    Berlin   Munich   Other
+  // Working student      P0       P0      P1
+  // Junior               P0       P1      P1
+  // Product role         P0       P1      P2
+  // Senior               P1       P2      P2
+  // Unspecified          P0       P1      P2
 
   if (isBerlin) {
-    if (isSenior && !isHighRole) return "P1";
-    return "P0";
+    if (isSenior)        return "P1";
+    return "P0"; // working student, junior, product, unspecified
   }
+
   if (isMunich) {
-    if (isSenior && !isHighRole) return "P2";
-    return "P1";
+    if (isWorkingStudent) return "P0";
+    if (isSenior)         return "P2";
+    return "P1"; // junior, product, unspecified
   }
+
   // Other cities
-  if (isHighRole && !isSenior) return "P1";
-  return "P2";
+  if (isWorkingStudent) return "P1";
+  if (isJunior)         return "P1";
+  if (isSenior)         return "P2";
+  return "P2"; // product role or unspecified outside Berlin/Munich
 }
 
 // ── Dedup RawData → UniqueNewJobs (with SSOT enrichment) ────────────

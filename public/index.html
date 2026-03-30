@@ -1235,6 +1235,104 @@ async function dedupRawData() {
   }
 }
 
+// ── Update Application Status inline ─────────────
+async function updateDbStatus(selectEl) {
+  const idx = parseInt(selectEl.dataset.idx);
+  const job = DB.jobs[idx]; if (!job) return;
+  const newStatus = selectEl.value;
+  const row = document.getElementById('db-row-' + idx);
+  try {
+    const d = await post('/ssot/update-status', { company: job.company, title: job.title, status: newStatus });
+    if (d.error) throw new Error(d.error);
+    job.appStatus = newStatus;
+    if (row) { row.classList.add('flash-green'); setTimeout(() => row.classList.remove('flash-green'), 800); }
+  } catch(e) {
+    msg('db-load-msg', '⚠ Status update failed: ' + e.message, 'err');
+    selectEl.value = job.appStatus || '';
+  }
+}
+
+// ── Generate CV from SSOT Database ───────────────
+async function doDbCv(idx) {
+  const job = DB.jobs[idx]; if (!job) return;
+  S.busy.add('db-' + idx);
+  renderDatabase();
+  cmsg('db-load-msg');
+  try {
+    msg('db-load-msg', '1/3 — Reading CV...', 'info');
+    const cv = await (await fetch('/cv/read')).json();
+    if (cv.error) throw new Error('CV read: ' + cv.error);
+
+    msg('db-load-msg', '2/3 — Analyzing CV vs job...', 'info');
+    const analysis = await post('/cv/analyze-job', {
+      cvText: cv.fullText,
+      jobDescription: job.description,
+      company: job.company,
+      jobTitle: job.title,
+    });
+    if (analysis.error) throw new Error('Analysis: ' + analysis.error);
+
+    msg('db-load-msg', '3/3 — Creating adjusted CV doc...', 'info');
+    const doc = await post('/cv/create-adjusted', {
+      keywordBlock: analysis.keywordBlock,
+      jobTitle: job.title,
+      company: job.company,
+      jobId: String(job._rowIndex),
+    });
+    if (doc.error) throw new Error('Doc creation: ' + doc.error);
+
+    job.adjustedCvUrl = doc.url;
+    await post('/ssot/update-links', { company: job.company, title: job.title, adjustedCvUrl: doc.url });
+    addTracker(job, doc.url, null);
+    msg('db-load-msg', '✓ Adjusted CV created — <a href="' + doc.url + '" target="_blank" style="color:#9d8fff">Open doc ↗</a>', 'ok');
+  } catch(e) {
+    msg('db-load-msg', '⚠ ' + e.message, 'err');
+  } finally {
+    S.busy.delete('db-' + idx);
+    renderDatabase();
+  }
+}
+
+// ── Generate Cover Letter from SSOT Database ─────
+async function doDbCover(idx) {
+  const job = DB.jobs[idx]; if (!job) return;
+  S.busy.add('db-' + idx);
+  renderDatabase();
+  cmsg('db-load-msg');
+  try {
+    msg('db-load-msg', '1/3 — Reading CV...', 'info');
+    const cv = await (await fetch('/cv/read')).json();
+    if (cv.error) throw new Error('CV read: ' + cv.error);
+
+    msg('db-load-msg', '2/3 — Writing cover letter...', 'info');
+    const cl = await post('/cv/cover-letter', {
+      cvText: cv.fullText,
+      jobDescription: job.description,
+      company: job.company,
+      jobTitle: job.title,
+      hiringManager: job.hiringManager || '',
+    });
+    if (cl.error) throw new Error('Cover letter: ' + cl.error);
+
+    msg('db-load-msg', '3/3 — Creating formatted Google Doc...', 'info');
+    const doc = await post('/docs/create-cover-letter', {
+      structured: cl.structured,
+      title: 'Cover Letter — ' + job.company + ' — ' + job.title,
+    });
+    if (doc.error) throw new Error('Doc creation: ' + doc.error);
+
+    job.coverLetterUrl = doc.url;
+    await post('/ssot/update-links', { company: job.company, title: job.title, coverLetterUrl: doc.url });
+    addTracker(job, null, doc.url);
+    msg('db-load-msg', '✓ Cover letter created — <a href="' + doc.url + '" target="_blank" style="color:var(--amber)">Open doc ↗</a>', 'ok');
+  } catch(e) {
+    msg('db-load-msg', '⚠ ' + e.message, 'err');
+  } finally {
+    S.busy.delete('db-' + idx);
+    renderDatabase();
+  }
+}
+
 // ══════════════════════════════════════════════════
 // TRACKER
 // ══════════════════════════════════════════════════
