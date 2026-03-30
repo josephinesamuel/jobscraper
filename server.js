@@ -63,9 +63,27 @@ async function getGoogleToken() {
   return googleAccessToken;
 }
 
+// ── Parse a posted date into "DD/MM/YYYY" stored as plain text ───
+function parsePostedDate(val) {
+  if (!val) return "";
+  // Handle Unix timestamps: LinkedIn uses ms, some actors use seconds
+  let d;
+  if (typeof val === "number" || /^\d{9,13}$/.test(String(val))) {
+    const n = Number(val);
+    d = new Date(n > 1e10 ? n : n * 1000); // seconds → ms if needed
+  } else {
+    d = new Date(val);
+  }
+  if (isNaN(d.getTime())) return String(val);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
 // ── Middleware ────────────────────────────────────────────────────
 app.use(cors({ origin: "*" }));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ── Health ────────────────────────────────────────────────────────
@@ -166,6 +184,7 @@ app.post("/scrape", async (req, res) => {
         body: JSON.stringify({ urls, count, scrapeCompany: true }),
       }
     );
+    const data = await r.json();
     if (!r.ok) return res.status(r.status).json({ error: data.error?.message || data.error || "Apify error" });
     res.json({ runId: data.data?.id });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -290,13 +309,13 @@ app.post("/sheets/append-jobs", async (req, res) => {
       : (j.applyUrl || j.link || j.url || "");
     const linkedInUrl = j.link || j.url || "";
     const city        = j.companyAddressLocality || (j.location || "").split(",")[0].trim();
-    const postedDate  = j.postedAt ? new Date(j.postedAt).toLocaleDateString("en-GB") : "";
+    const postedDate  = parsePostedDate(j.postedAt);
     const hiringMgr   = [j.jobPosterName, j.jobPosterTitle].filter(Boolean).join(" — ");
 
     return [
       j.company        || "",
-      j.standardizedTitle || j.title || "",
-      (j.descriptionText || j.description || "").slice(0, 1500),
+      j.title || j.standardizedTitle || "",
+      (j.descriptionText || j.description || "").slice(0, 5000),
       applyUrl,
       linkedInUrl,
       isEasyApply ? "Yes (Easy Apply)" : "No (External)",
@@ -345,7 +364,7 @@ app.post("/sheets/append-jobs", async (req, res) => {
 
     // Append
     const r = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}/values/RawData!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}/values/RawData!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ values: toWrite }) }
     );
     const data = await r.json();
@@ -445,7 +464,7 @@ app.post("/cv/create-adjusted", async (req, res) => {
     const token = await getGoogleToken();
     if (!token) return res.status(401).json({ error: "Google not connected." });
 
-    const title = `CV — ${company} — ${jobTitle} (Adjusted)`;
+    const title = `CV — ${company} — ${jobTitle}`;
 
     // Step 1: Copy the CV doc via Drive — preserves ALL formatting exactly
     const copyR = await fetch(
@@ -984,12 +1003,12 @@ app.post("/job/append-to-sheet", async (req, res) => {
 
     // Same column structure as bulk export
     const isEasyApply = job.applyMethod === "SimpleOnsiteApply";
-    const postedDate  = job.postedAt ? new Date(job.postedAt).toLocaleDateString("en-GB") : "";
+    const postedDate  = parsePostedDate(job.postedAt);
     const city        = job.companyAddressLocality || (job.location || "").split(",")[0].trim();
     const hiringMgr   = [job.jobPosterName, job.jobPosterTitle].filter(Boolean).join(" — ");
     const row = [
       job.company || "", job.title || "",
-      (job.description || "").slice(0, 1500),
+      (job.description || "").slice(0, 49000),
       job.applyUrl || job.link || "", job.link || "",
       isEasyApply ? "Yes (Easy Apply)" : "No (External)",
       postedDate, city, "Open", hiringMgr,
@@ -999,17 +1018,6 @@ app.post("/job/append-to-sheet", async (req, res) => {
       job.industries || "", job.applicantsCount || "", "", "",
     ];
 
-    // Get or create Jobs tab
-    const metaR = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}?fields=sheets.properties.title`, { headers: { Authorization: `Bearer ${token}` } });
-    const meta  = await metaR.json();
-    const tabNames = (meta.sheets || []).map(s => s.properties.title);
-    if (!tabNames.includes("Jobs")) {
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}:batchUpdate`, {
-        method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ requests: [{ addSheet: { properties: { title: "Jobs" } } }] }),
-      });
-    }
-
     // Check if header exists
     const checkR = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}/values/RawData!A1`, { headers: { Authorization: `Bearer ${token}` } });
     const checkData = await checkR.json();
@@ -1018,7 +1026,7 @@ app.post("/job/append-to-sheet", async (req, res) => {
     const toWrite = isEmpty ? [header, row] : [row];
 
     const r2 = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}/values/RawData!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${keys.sheetId}/values/RawData!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       { method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ values: toWrite }) }
     );
     const d2 = await r2.json();
