@@ -73,6 +73,8 @@
     .badge-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(62,207,142,.2)}
     .badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
     .badge-purple{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
+    .badge-red{background:rgba(248,113,113,.12);color:#fca5a5;border:1px solid rgba(248,113,113,.2)}
+    .badge-teal{background:rgba(45,212,191,.1);color:#5eead4;border:1px solid rgba(45,212,191,.2)}
     .msg{font-size:12px;margin-top:10px;padding:8px 12px;border-radius:var(--radius-sm)}
     .msg-err{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,113,113,.2)}
     .msg-info{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent-border)}
@@ -398,13 +400,17 @@
       <div class="ms-wrap" id="ms-german"><button class="ms-btn" onclick="toggleMs('ms-german')">German <span class="ms-arrow">▾</span></button><div class="ms-drop"><label><input type="checkbox" value="Required" onchange="renderDatabase()"> Required</label><label><input type="checkbox" value="Nice to Have" onchange="renderDatabase()"> Nice to Have</label><label><input type="checkbox" value="Not Mentioned" onchange="renderDatabase()"> Not Mentioned</label></div></div>
       <div class="ms-wrap" id="ms-status"><button class="ms-btn" onclick="toggleMs('ms-status')">App Status <span class="ms-arrow">▾</span></button><div class="ms-drop">
         <label><input type="checkbox" value="" onchange="renderDatabase()"> — (none)</label>
+        <label><input type="checkbox" value="Not yet" onchange="renderDatabase()"> Not yet</label>
         <label><input type="checkbox" value="Applied" onchange="renderDatabase()"> Applied</label>
+        <label><input type="checkbox" value="In progress" onchange="renderDatabase()"> In progress</label>
+        <label><input type="checkbox" value="HR Interview" onchange="renderDatabase()"> HR Interview</label>
+        <label><input type="checkbox" value="Technical Interview" onchange="renderDatabase()"> Technical Interview</label>
+        <label><input type="checkbox" value="Offer" onchange="renderDatabase()"> Offer</label>
+        <label><input type="checkbox" value="Rejected" onchange="renderDatabase()"> Rejected</label>
+        <label><input type="checkbox" value="On hold" onchange="renderDatabase()"> On hold</label>
         <label><input type="checkbox" value="Closed" onchange="renderDatabase()"> Closed</label>
         <label><input type="checkbox" value="Dropped" onchange="renderDatabase()"> Dropped</label>
         <label><input type="checkbox" value="Duplicate" onchange="renderDatabase()"> Duplicate</label>
-        <label><input type="checkbox" value="In progress" onchange="renderDatabase()"> In progress</label>
-        <label><input type="checkbox" value="Not yet" onchange="renderDatabase()"> Not yet</label>
-        <label><input type="checkbox" value="On hold" onchange="renderDatabase()"> On hold</label>
         <label><input type="checkbox" value="Not yet but dropped due to old data" onchange="renderDatabase()"> Not yet (old data)</label>
       </div></div>
       <div class="ms-wrap" id="ms-date"><button class="ms-btn" onclick="toggleMs('ms-date')">Scraped Date <span class="ms-arrow">▾</span></button><div class="ms-drop" id="ms-date-drop"></div></div>
@@ -922,7 +928,7 @@ function renderDatabase() {
     if (match && match[1] === DB.sortCol) th.classList.add(DB.sortDir === 1 ? 'sort-asc' : 'sort-desc');
   });
 
-  const statusOptions = ['','Applied','Closed','Dropped','Duplicate','In progress','Not yet','On hold','Not yet but dropped due to old data'];
+  const statusOptions = ['','Not yet','Applied','In progress','HR Interview','Technical Interview','Offer','Rejected','On hold','Closed','Dropped','Duplicate','Not yet but dropped due to old data'];
 
   function germanBadge(g) {
     if (!g || g === 'Not Mentioned') return '<span style="font-size:11px;color:var(--text3)">—</span>';
@@ -939,9 +945,21 @@ function renderDatabase() {
 
   function statusBadge(s) {
     if (!s) return '<span style="color:var(--text3);font-size:11px">—</span>';
-    const map = { Applied:'badge-blue', Interviewing:'badge-green', Offer:'badge-green', Rejected:'badge-amber', Withdrawn:'badge-amber' };
+    const map = {
+      'Not yet':              'badge-purple',
+      'Applied':              'badge-blue',
+      'In progress':          'badge-blue',
+      'HR Interview':         'badge-teal',
+      'Technical Interview':  'badge-teal',
+      'Offer':                'badge-green',
+      'Rejected':             'badge-red',
+      'On hold':              'badge-amber',
+      'Closed':               'badge-amber',
+      'Dropped':              'badge-amber',
+      'Duplicate':            'badge-amber',
+    };
     const cls = map[s] || '';
-    return cls ? '<span class="badge ' + cls + '" style="font-size:10px">' + s + '</span>' : '<span style="font-size:11px">' + s + '</span>';
+    return cls ? '<span class="badge ' + cls + '" style="font-size:10px">' + s + '</span>' : '<span style="font-size:11px;color:var(--text3)">' + s + '</span>';
   }
 
   el('db-tbody').innerHTML = jobs.map(j => {
@@ -954,7 +972,7 @@ function renderDatabase() {
     const dateStr = j.scrapedDate ? j.scrapedDate.split(' ')[0].split('T')[0] : '—';
 
     // Status dropdown (inline editable)
-    const statusSelect = '<select class="db-status-sel" data-idx="' + realIdx + '" onchange="updateDbStatus(this)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:11px;padding:3px 6px;cursor:pointer;max-width:110px">'
+    const statusSelect = '<select class="db-status-sel" data-idx="' + realIdx + '" onchange="updateDbStatus(this);colorStatusSel(this)" style="border-radius:4px;font-size:11px;padding:3px 6px;cursor:pointer;max-width:130px;border-width:1px;border-style:solid">'
       + statusOptions.map(s => '<option value="' + s + '"' + (j.appStatus === s || (!j.appStatus && s === '') ? ' selected' : '') + '>' + (s||'—') + '</option>').join('')
       + '</select>';
 
@@ -998,6 +1016,8 @@ function renderDatabase() {
       + '<td style="white-space:nowrap" id="db-actions-' + realIdx + '">' + actionBtns + '</td>'
       + '</tr>';
   }).join('');
+  // Apply colors to all status dropdowns after render
+  document.querySelectorAll('.db-status-sel').forEach(colorStatusSel);
 }
 
 function dbSort(col) {
@@ -1232,6 +1252,33 @@ async function dedupRawData() {
       b.disabled = false;
       b.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Dedup RawData';
     });
+  }
+}
+
+// ── Status dropdown color helper ──────────────────
+function colorStatusSel(sel) {
+  const styles = {
+    'Not yet':             { bg:'rgba(139,92,246,.15)',  color:'#c4b5fd', border:'rgba(139,92,246,.3)'  },
+    'Applied':             { bg:'rgba(96,165,250,.15)',  color:'#93c5fd', border:'rgba(96,165,250,.3)'  },
+    'In progress':         { bg:'rgba(96,165,250,.15)',  color:'#93c5fd', border:'rgba(96,165,250,.3)'  },
+    'HR Interview':        { bg:'rgba(45,212,191,.12)',  color:'#5eead4', border:'rgba(45,212,191,.3)'  },
+    'Technical Interview': { bg:'rgba(45,212,191,.12)',  color:'#5eead4', border:'rgba(45,212,191,.3)'  },
+    'Offer':               { bg:'rgba(62,207,142,.15)',  color:'#6ee7b7', border:'rgba(62,207,142,.3)'  },
+    'Rejected':            { bg:'rgba(248,113,113,.12)', color:'#fca5a5', border:'rgba(248,113,113,.3)' },
+    'On hold':             { bg:'rgba(251,191,36,.12)',  color:'#fcd34d', border:'rgba(251,191,36,.3)'  },
+    'Closed':              { bg:'rgba(251,191,36,.12)',  color:'#fcd34d', border:'rgba(251,191,36,.3)'  },
+    'Dropped':             { bg:'rgba(251,191,36,.12)',  color:'#fcd34d', border:'rgba(251,191,36,.3)'  },
+    'Duplicate':           { bg:'rgba(251,191,36,.12)',  color:'#fcd34d', border:'rgba(251,191,36,.3)'  },
+  };
+  const st = styles[sel.value];
+  if (st) {
+    sel.style.background   = st.bg;
+    sel.style.color        = st.color;
+    sel.style.borderColor  = st.border;
+  } else {
+    sel.style.background   = 'var(--bg3)';
+    sel.style.color        = 'var(--text3)';
+    sel.style.borderColor  = 'var(--border2)';
   }
 }
 

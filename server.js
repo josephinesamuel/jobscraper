@@ -1293,8 +1293,12 @@ app.post("/rawdata/dedup", async (req, res) => {
       // Assign priority
       const priority = assignPriority(row[colTitle] || "", row[colCity] || "");
 
+      // Pad row to full header width (Sheets API omits trailing empty cells)
+      const paddedRow = [...row];
+      while (paddedRow.length < rdHeaders.length) paddedRow.push("");
+
       // Build enriched row: original + Previously Scraped + Old App Status + German Required + Priority
-      uniqueRows.push([...row, previouslyScraped ? "TRUE" : "FALSE", oldApplicationStatus, germanRequired, priority]);
+      uniqueRows.push([...paddedRow, previouslyScraped ? "TRUE" : "FALSE", oldApplicationStatus, germanRequired, priority]);
     });
 
     // ── Step 4: Write to UniqueNewJobs tab ───────────────────────────
